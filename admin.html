@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Patternly · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div id="admin">
+    <!-- LOCK -->
+    <div id="lock" class="lock">
+      <div class="lock-card">
+        <div class="brand">Pattern<span>ly</span> <span class="admin-tag">admin</span></div>
+        <p class="mut">Enter your admin key to continue.</p>
+        <input id="keyInput" type="password" class="report-input" placeholder="Admin key" autocomplete="off" />
+        <button id="unlockBtn" class="modal-btn">Unlock</button>
+        <div id="lockErr" class="lock-err"></div>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="panel" class="panel" style="display:none;">
+      <header class="ad-header">
+        <div class="brand">Pattern<span>ly</span> <span class="admin-tag">admin</span></div>
+        <div class="totals" id="totals"></div>
+        <button class="icon-btn" id="refreshBtn" title="Refresh">⟳</button>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="queue">Review queue</button>
+        <button class="tab" data-tab="submissions">Submissions</button>
+        <button class="tab" data-tab="compose">Compose</button>
+        <button class="tab" data-tab="schedule">Schedule</button>
+      </nav>
+
+      <!-- QUEUE -->
+      <section class="tabpane active" id="pane-queue">
+        <p class="mut" id="queueHint"></p>
+        <div id="queueList"></div>
+      </section>
+
+      <!-- SUBMISSIONS -->
+      <section class="tabpane" id="pane-submissions">
+        <p class="mut" id="subHint"></p>
+        <div id="submissionsList"></div>
+      </section>
+
+      <!-- COMPOSE -->
+      <section class="tabpane" id="pane-compose">
+        <div class="compose-grid">
+          <div class="field"><label>Difficulty</label>
+            <select id="cDiff"><option value="easy">Easy (3 examples)</option><option value="hard">Hard (4 examples)</option></select></div>
+          <div class="field"><label>Puzzle ID</label><input id="cId" class="ti" /></div>
+        </div>
+
+        <label class="section-lbl">Examples</label>
+        <div id="cExamples" class="examples-edit"></div>
+
+        <div class="compose-grid">
+          <div class="field"><label>Question input</label><input id="cQ" class="ti" inputmode="numeric" /></div>
+          <div class="field"><label>Answer</label><input id="cA" class="ti" inputmode="numeric" /></div>
+        </div>
+        <div class="field"><label>Rule name (shown on reveal)</label><input id="cRule" class="ti" placeholder="e.g. Multiply by 3" /></div>
+
+        <div id="checker" class="checker"></div>
+
+        <label class="chk-line"><input type="checkbox" id="cOverride" /> Publish anyway (override ambiguity block)</label>
+        <button id="saveBtn" class="modal-btn">Create puzzle</button>
+      </section>
+
+      <!-- SCHEDULE -->
+      <section class="tabpane" id="pane-schedule">
+        <p class="mut" id="runway"></p>
+        <div id="scheduleList"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="checker.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

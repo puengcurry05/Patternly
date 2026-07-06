@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#8a5b34" />
+  <title>Patternly — a daily pattern puzzle</title>
+  <meta name="description" content="Spot the hidden rule. One puzzle a day, Easy and Hard. Three lives. Guess the missing number." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <button class="brand" id="brandBtn">Pattern<span>ly</span></button>
+      <div class="header-btns">
+        <button class="icon-btn" id="howBtn" title="How to play" aria-label="How to play">?</button>
+        <a class="icon-btn nav-link" href="community.html" title="Community" aria-label="Community">☰</a>
+        <button class="icon-btn" id="statsBtn" title="Your stats" aria-label="Your stats">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- HOME -->
+      <section class="screen active" id="screen-home">
+        <div class="home-top">
+          <div class="home-date" id="homeDate">—</div>
+          <div class="tagline">Spot the hidden rule.</div>
+          <div class="home-streak" id="homeStreak"></div>
+        </div>
+        <button class="mode-card" id="cardEasy" data-diff="easy">
+          <div class="mc-left">
+            <div class="mc-title">Easy <span class="mc-badge">3 examples</span></div>
+            <div class="mc-sub" id="easySub">Today's gentle warm-up</div>
+          </div>
+          <div class="mc-status" id="easyStatus">›</div>
+        </button>
+        <button class="mode-card" id="cardHard" data-diff="hard">
+          <div class="mc-left">
+            <div class="mc-title">Hard <span class="mc-badge hard">4 examples</span></div>
+            <div class="mc-sub" id="hardSub">For the pattern hunters</div>
+          </div>
+          <div class="mc-status" id="hardStatus">›</div>
+        </button>
+        <div class="home-foot">
+          <a class="link-btn nav-link" href="community.html">Community →</a>
+        </div>
+      </section>
+
+      <!-- PUZZLE -->
+      <section class="screen" id="screen-puzzle">
+        <div class="puzzle-head">
+          <button class="back" id="puzzleBack">‹ Back</button>
+          <div class="lives" id="lives" aria-label="Lives remaining"></div>
+        </div>
+        <div class="examples" id="examples"></div>
+        <div class="wrong-list" id="wrongList"></div>
+        <div class="pad-wrap">
+          <div class="guess-display empty" id="guessDisplay">tap the numbers</div>
+          <div class="keypad" id="keypad"></div>
+          <button class="guess-btn" id="guessBtn" disabled>Guess</button>
+        </div>
+      </section>
+
+      <!-- RESULT -->
+      <section class="screen" id="screen-result">
+        <div class="result-inner">
+          <div class="result-emoji" id="resultEmoji"></div>
+          <div class="result-title" id="resultTitle"></div>
+          <div class="result-sub" id="resultSub"></div>
+          <div class="reveal-card">
+            <div class="reveal-label">The hidden rule</div>
+            <div class="reveal-rule" id="revealRule"></div>
+            <div class="reveal-eq" id="revealEq"></div>
+            <div class="solve-rate" id="solveRate"></div>
+          </div>
+          <button class="share-btn" id="shareBtn">Share result</button>
+          <div class="countdown" id="countdown"></div>
+          <div class="report-row">
+            <button class="link-btn" id="reportLink">Something wrong with this puzzle?</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- OVERLAYS -->
+  <div class="overlay" id="overlay-how">
+    <div class="modal">
+      <button class="icon-btn close" data-close>✕</button>
+      <h2>How to play</h2>
+      <p class="mut">Every example follows one hidden rule.</p>
+      <div class="how-step"><div class="how-num">1</div><div class="ht">Study the examples. <span class="mono-inline">2 → 4, 5 → 25, 8 → 64</span></div></div>
+      <div class="how-step"><div class="how-num">2</div><div class="ht">Figure out the <b>rule</b> that turns each input into its output.</div></div>
+      <div class="how-step"><div class="how-num">3</div><div class="ht">Predict the missing output. <span class="mono-inline">11 → ?</span></div></div>
+      <div class="how-step"><div class="how-num">4</div><div class="ht">You get <b>3 lives</b>. Answer with numbers only. The rule is revealed at the end.</div></div>
+      <button class="modal-btn" data-close>Got it</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay-stats">
+    <div class="modal">
+      <button class="icon-btn close" data-close>✕</button>
+      <h2>Your stats</h2>
+      <div class="stats-auth" id="statsAuth"></div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <p class="mut" style="margin-bottom:8px;">Guess distribution (daily solves)</p>
+      <div id="distBox"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay-report">
+    <div class="modal">
+      <button class="icon-btn close" data-close>✕</button>
+      <h2>Report this puzzle</h2>
+      <p class="mut">Thanks for helping keep puzzles fair.</p>
+      <div id="reportOpts">
+        <button class="report-opt" data-rtype="alt_answer">
+          <div class="rt">I have a different valid answer</div>
+          <div class="rd">Another rule fits all the examples but gives a different number</div>
+        </button>
+        <button class="report-opt" data-rtype="broken">
+          <div class="rt">The puzzle seems broken</div>
+          <div class="rd">The answer looks wrong or the examples don't make sense</div>
+        </button>
+        <button class="report-opt" data-rtype="difficulty">
+          <div class="rt">Wrong difficulty</div>
+          <div class="rd">This felt misplaced as Easy / Hard</div>
+        </button>
+      </div>
+      <div id="altAnswerWrap" style="display:none;">
+        <input class="report-input" id="altAnswerInput" inputmode="numeric" placeholder="The number you think also works" />
+      </div>
+      <button class="modal-btn" id="reportSubmit" disabled>Submit report</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

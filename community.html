@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#8a5b34" />
+  <title>Patternly · Community</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&display=swap" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <a class="brand" href="index.html">Pattern<span>ly</span></a>
+      <a class="link-btn nav-link" href="index.html">Today →</a>
+    </header>
+
+    <main>
+      <section class="screen active" style="padding-top:24px">
+        <div class="home-top">
+          <div class="home-date">Community</div>
+          <div class="tagline">Play any puzzle, anytime.</div>
+          <div class="home-streak" style="color:var(--muted)">These don't affect your daily streak.</div>
+        </div>
+
+        <div class="sort-row">
+          <button class="sort-btn active" data-sort="plays">Most played</button>
+          <button class="sort-btn" data-sort="rate">Correction rate</button>
+          <a class="link-btn nav-link submit-link" href="submit.html">Submit a puzzle →</a>
+        </div>
+
+        <div class="archive-list" id="communityList">
+          <div class="community-empty" id="loading">Loading puzzles…</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="community.js"></script>
+</body>
+</html>
