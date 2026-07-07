@@ -2,6 +2,9 @@
 
 A daily number-pattern puzzle. **Static frontend + Supabase** — no server to run.
 
+Play Online:
+https://puengcurry05.github.io/Patternly/
+
 ## Architecture
 
 ```
