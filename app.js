@@ -278,7 +278,7 @@ function buildShareText() {
     lines.push(`${label} ${squares || '—'}`);
   });
   if (session.stats.streak > 0) lines.push(`🔥 ${session.stats.streak} day streak`);
-  lines.push('patternly.app');
+  lines.push('https://puengcurry05.github.io/Patternly/');
   return lines.join('\n');
 }
 function doShare() {
