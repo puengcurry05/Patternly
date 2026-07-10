@@ -41,6 +41,15 @@
       <!-- QUEUE -->
       <section class="tabpane active" id="pane-queue">
         <p class="mut" id="queueHint"></p>
+        <div class="qfilter">
+          <input id="qSearch" class="ti" placeholder="Search by ID or rule…" autocomplete="off" />
+          <div class="qfilter-pills">
+            <button type="button" class="fpill active" data-diff="all">All</button>
+            <button type="button" class="fpill" data-diff="easy">Easy</button>
+            <button type="button" class="fpill" data-diff="hard">Hard</button>
+          </div>
+          <label class="qfilter-toggle"><input type="checkbox" id="qShowRetired" checked /> Show retired</label>
+        </div>
         <div id="queueList"></div>
       </section>
 
@@ -78,6 +87,31 @@
         <p class="mut" id="runway"></p>
         <div id="scheduleList"></div>
       </section>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div id="editModal" class="edit-modal" style="display:none;">
+    <div class="edit-backdrop" id="eBackdrop"></div>
+    <div class="edit-card">
+      <div class="edit-head">
+        <h3 class="edit-title">Edit <span id="eTitle" class="mono"></span> <span id="eDiffPill" class="pill"></span></h3>
+        <button class="icon-btn" id="eClose" title="Close" aria-label="Close">✕</button>
+      </div>
+      <p class="edit-note">Fix the numbers or the rule name. Difficulty and ID can't change here — a wrong ID would orphan existing plays and reports.</p>
+      <label class="section-lbl">Examples</label>
+      <div id="eExamples" class="examples-edit"></div>
+      <div class="compose-grid">
+        <div class="field"><label>Question input</label><input id="eQ" class="ti" inputmode="numeric" /></div>
+        <div class="field"><label>Answer</label><input id="eA" class="ti" inputmode="numeric" /></div>
+      </div>
+      <div class="field"><label>Rule name (shown on reveal)</label><input id="eRule" class="ti" /></div>
+      <div id="eChecker" class="checker"></div>
+      <label class="chk-line"><input type="checkbox" id="eOverride" /> Save anyway (override ambiguity block)</label>
+      <div class="edit-actions">
+        <button id="eCancel" class="sm-btn">Cancel</button>
+        <button id="eSave" class="modal-btn">Save changes</button>
+      </div>
     </div>
   </div>
 
