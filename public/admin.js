@@ -9,6 +9,11 @@ const CFG = window.PATTERNLY_CONFIG;
 let KEY = sessionStorage.getItem('patternly_admin_key') || null;
 let DATA = null;   // last admin_overview payload
 
+// queue filter state
+let qFilterDiff = 'all';
+let qSearch = '';
+let qShowRetired = true;
+
 async function rpc(fn, params) {
   const r = await fetch(`${CFG.SUPABASE_URL}/rest/v1/rpc/${fn}`, {
     method: 'POST',
@@ -76,8 +81,10 @@ function renderSubmissions() {
         ${p.ambiguityFlag ? `<div class="warnrow">⚠ Submitter overrode the ambiguity checker — review the examples carefully.</div>` : ''}
       </div>
       <div class="qactions">
+        <button class="sm-btn" data-act="edit" data-id="${p.id}">Edit</button>
         <button class="sm-btn" data-act="approve" data-id="${p.id}">Approve &amp; publish</button>
         <button class="sm-btn danger" data-act="reject" data-id="${p.id}">Reject</button>
+        <button class="sm-btn danger" data-act="delete" data-id="${p.id}" data-rule="${esc(p.rule)}">Delete permanently</button>
       </div>
     </div>`).join('');
 }
@@ -89,15 +96,27 @@ function needsAttention(p) {
   return Object.values(cl).some(c => c >= 3);   // a wrong answer repeated ≥3× = ambiguity smell
 }
 function renderQueue() {
-  const puzzles = DATA.puzzles.filter(p => p.status !== 'in_review' && p.status !== 'rejected').slice().sort((a, b) => {
+  const base = DATA.puzzles.filter(p => p.status !== 'in_review' && p.status !== 'rejected');
+  const flagged = base.filter(needsAttention).length;
+  $('#queueHint').textContent = flagged
+    ? `${flagged} puzzle${flagged === 1 ? '' : 's'} need${flagged === 1 ? 's' : ''} a look — reports or clustered wrong answers.`
+    : 'Nothing flagged. Everything below is for reference.';
+
+  let puzzles = base.slice();
+  if (qFilterDiff !== 'all') puzzles = puzzles.filter(p => p.difficulty === qFilterDiff);
+  if (!qShowRetired) puzzles = puzzles.filter(p => p.status !== 'retired');
+  if (qSearch) puzzles = puzzles.filter(p =>
+    p.id.toLowerCase().includes(qSearch) || (p.rule || '').toLowerCase().includes(qSearch));
+  puzzles.sort((a, b) => {
     const an = needsAttention(a) ? 1 : 0, bn = needsAttention(b) ? 1 : 0;
     if (an !== bn) return bn - an;
     return b.openReports - a.openReports;
   });
-  const flagged = puzzles.filter(needsAttention).length;
-  $('#queueHint').textContent = flagged
-    ? `${flagged} puzzle${flagged === 1 ? '' : 's'} need${flagged === 1 ? 's' : ''} a look — reports or clustered wrong answers.`
-    : 'Nothing flagged. Everything below is for reference.';
+
+  if (!puzzles.length) {
+    $('#queueList').innerHTML = `<p class="mut" style="padding:8px 2px;">No puzzles match this filter.</p>`;
+    return;
+  }
 
   $('#queueList').innerHTML = puzzles.map(p => {
     const flag = needsAttention(p);
@@ -121,16 +140,20 @@ function renderQueue() {
           ${clusters.length ? `<div>Wrong-guess clusters: <span class="mono">${clusters.map(([v, c]) => `${v}×${c}`).join('  ')}</span></div>` : ''}
         </div>
         <div class="qactions">
+          <button class="sm-btn" data-act="edit" data-id="${p.id}">Edit</button>
           ${p.openReports ? `<button class="sm-btn" data-act="resolve" data-id="${p.id}">Mark reports reviewed</button>` : ''}
           ${p.status === 'published'
             ? `<button class="sm-btn danger" data-act="retire" data-id="${p.id}">Retire</button>`
             : `<button class="sm-btn" data-act="publish" data-id="${p.id}">Re-publish</button>`}
+          <button class="sm-btn danger" data-act="delete" data-id="${p.id}" data-rule="${esc(p.rule)}">Delete permanently</button>
         </div>
       </div>`;
   }).join('');
 }
 
 async function queueAction(act, id) {
+  if (act === 'edit') { openEdit(id); return; }
+  if (act === 'delete') { await deletePuzzle(id); return; }
   try {
     if (act === 'resolve') { await rpc('admin_resolve_reports', { p_key: KEY, p_puzzle_id: id }); toast('Reports marked reviewed'); }
     if (act === 'retire')  { await rpc('admin_set_status', { p_key: KEY, p_id: id, p_status: 'retired' }); toast(`${id} retired`); }
@@ -139,6 +162,24 @@ async function queueAction(act, id) {
     if (act === 'reject')  { await rpc('admin_set_status', { p_key: KEY, p_id: id, p_status: 'rejected' }); toast(`${id} rejected`); }
     await refresh();
   } catch { toast('Action failed'); }
+}
+
+async function deletePuzzle(id) {
+  const p = (DATA?.puzzles || []).find(x => x.id === id);
+  const rule = p ? p.rule : '';
+  const ok = window.confirm(
+    `Permanently delete ${id}${rule ? ` — ${rule}` : ''}?\n\n` +
+    `This removes the puzzle and its reports/schedule pins for good. This cannot be undone.\n\n` +
+    `(If it already has player plays, deletion will be refused automatically — retire it instead.)`
+  );
+  if (!ok) return;
+  try {
+    const out = await rpc('admin_delete_puzzle', { p_key: KEY, p_id: id });
+    if (out.error === 'has_plays') { toast(`Can't delete — ${out.plays} play(s) recorded. Retire it instead.`); return; }
+    if (out.error === 'not_found') { toast('Puzzle not found'); return; }
+    toast(`${id} deleted permanently`);
+    await refresh();
+  } catch { toast('Delete failed'); }
 }
 
 // ---------- COMPOSE ----------
@@ -203,6 +244,74 @@ async function savePuzzle() {
   } catch { toast('Create failed'); }
 }
 
+// ---------- EDIT (fix an existing puzzle in place) ----------
+let editingId = null;
+
+function openEdit(id) {
+  const p = (DATA?.puzzles || []).find(x => x.id === id);
+  if (!p) { toast('Puzzle not found'); return; }
+  editingId = id;
+  $('#eTitle').textContent = p.id;
+  const dp = $('#eDiffPill'); dp.textContent = p.difficulty; dp.className = 'pill ' + p.difficulty;
+  // one row per existing example — count follows the puzzle, so difficulty stays fixed
+  $('#eExamples').innerHTML = p.examples.map(([i, o], idx) => `
+    <div class="ex-row">
+      <input class="eex-in" data-i="${idx}" inputmode="numeric" value="${esc(i)}" />
+      <span class="arrow">→</span>
+      <input class="eex-out" data-i="${idx}" inputmode="numeric" value="${esc(o)}" />
+    </div>`).join('');
+  $('#eQ').value = p.question;
+  $('#eA').value = p.answer;
+  $('#eRule').value = p.rule;
+  $('#eOverride').checked = false;
+  $('#eExamples').querySelectorAll('input').forEach(el => el.addEventListener('input', runEditChecker));
+  runEditChecker();
+  $('#editModal').style.display = 'block';
+  $('#eRule').focus();
+}
+
+function closeEdit() { $('#editModal').style.display = 'none'; editingId = null; }
+
+function readEdit() {
+  const examples = [];
+  const ins = [...document.querySelectorAll('.eex-in')], outs = [...document.querySelectorAll('.eex-out')];
+  for (let i = 0; i < ins.length; i++) {
+    const a = Number(ins[i].value), b = Number(outs[i].value);
+    if (ins[i].value === '' || outs[i].value === '' || !Number.isFinite(a) || !Number.isFinite(b)) return null;
+    examples.push([a, b]);
+  }
+  const q = Number($('#eQ').value), ans = Number($('#eA').value);
+  if ($('#eQ').value === '' || $('#eA').value === '' || !Number.isFinite(q) || !Number.isFinite(ans)) return null;
+  return { examples, q, ans };
+}
+
+function runEditChecker() {
+  const box = $('#eChecker');
+  const data = readEdit();
+  if (!data) { box.className = 'checker'; box.innerHTML = 'Fill in all examples, the question, and the answer to check for ambiguity.'; return; }
+  return renderChecker(box, data.examples, data.q, data.ans);
+}
+
+async function saveEdit() {
+  if (!editingId) return;
+  const data = readEdit();
+  if (!data) { toast('Fill in all fields'); return; }
+  const rule = $('#eRule').value.trim();
+  if (!rule) { toast('Rule name required'); return; }
+  const res = ambiguityCheck(data.examples, data.q, data.ans);
+  if (res.altAnswers.length && !$('#eOverride').checked) { toast('Ambiguous — fix it or tick "Save anyway"'); return; }
+  try {
+    const out = await rpc('admin_update_puzzle', {
+      p_key: KEY, p_id: editingId,
+      p_examples: data.examples, p_question: data.q, p_answer: data.ans, p_rule: rule,
+    });
+    if (out.error === 'not_found') { toast('Puzzle not found'); return; }
+    toast(`${editingId} updated`);
+    closeEdit();
+    await refresh();
+  } catch { toast('Update failed'); }
+}
+
 // ---------- SCHEDULE ----------
 function renderSchedule() {
   const today = DATA.today, day = DATA.day;
@@ -264,6 +373,24 @@ function init() {
   $('#submissionsList').addEventListener('click', e => {
     const btn = e.target.closest('[data-act]'); if (btn) queueAction(btn.dataset.act, btn.dataset.id);
   });
+
+  // queue filters
+  $('#qSearch').addEventListener('input', e => { qSearch = e.target.value.trim().toLowerCase(); renderQueue(); });
+  $('#qShowRetired').addEventListener('change', e => { qShowRetired = e.target.checked; renderQueue(); });
+  document.querySelectorAll('.fpill').forEach(pill => pill.addEventListener('click', () => {
+    document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    qFilterDiff = pill.dataset.diff;
+    renderQueue();
+  }));
+
+  // edit modal
+  $('#eClose').addEventListener('click', closeEdit);
+  $('#eCancel').addEventListener('click', closeEdit);
+  $('#eBackdrop').addEventListener('click', closeEdit);
+  ['eQ', 'eA'].forEach(f => $('#' + f).addEventListener('input', runEditChecker));
+  $('#eSave').addEventListener('click', saveEdit);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && editingId) closeEdit(); });
 
   $('#cDiff').addEventListener('change', () => { renderExampleRows(); suggestId(); runChecker(); });
   ['cQ', 'cA'].forEach(f => $('#' + f).addEventListener('input', runChecker));
